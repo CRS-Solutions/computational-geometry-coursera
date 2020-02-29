@@ -12,4 +12,11 @@ public class Problem4Test {
         assertEquals("INSIDE", problem.solve(0, 0));
         assertEquals("INSIDE", problem.solve(2, -1));
     }
+
+    @Test
+    public void test2() {
+        int[] polygon = {7, 5, 3, 5, 3, 1, 7, 1};
+        Problem4 problem = new Problem4(polygon);
+        assertEquals("INSIDE", problem.solve(6, 3));
+    }
 }
