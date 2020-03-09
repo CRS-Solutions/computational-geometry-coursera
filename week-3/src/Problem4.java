@@ -20,7 +20,8 @@ public class Problem4 {
             switch (event.type) {
                 case Start: {
                     final Segment curr = event.s1;
-                    status.add(event.x, curr);
+                    status.updateLine(event.y);
+                    status.add(event.y, curr);
 
                     Segment prev = status.prev(curr);
                     if (getIntersection(prev, curr, event.x, event.y, z)) {
@@ -72,8 +73,8 @@ public class Problem4 {
                     status.remove(s1);
                     status.remove(s2);
 
-                    status.add(event.x, s2);
-                    status.add(event.x, s1);
+                    status.add(event.y, s2);
+                    status.add(event.y, s1);
                     break;
             }
         }
@@ -98,7 +99,7 @@ public class Problem4 {
         return result.toString();
     }
 
-    private static boolean getIntersection(Segment s1, Segment s2, float evtX, float evtY, float[] out) {
+    public static boolean getIntersection(Segment s1, Segment s2, float evtX, float evtY, float[] out) {
         if (s1 != null && s2 != null && intersect(s1, s2)) {
             final int dx1 = s1.end.x - s1.start.x;
             final int dy1 = s1.end.y - s1.start.y;
@@ -132,7 +133,7 @@ public class Problem4 {
             }
 
             // should intersect below event line
-            if (y < evtY) {
+            if (Float.compare(y, evtY) < 0 || Float.compare(y, evtY) == 0 && Float.compare(x, evtX) >= 0) {
                 out[0] = x;
                 out[1] = y;
                 return true;
@@ -237,13 +238,7 @@ public class Problem4 {
         }
 
         public static EventPoint start(Segment segment) {
-            final Point p;
-            if (segment.start.y > segment.end.y) {
-                p = segment.start;
-            } else {
-                p = segment.end;
-            }
-
+            final Point p = segment.start;
             return new EventPoint(Type.Start, p.x, p.y, segment, segment);
         }
 
@@ -324,11 +319,11 @@ public class Problem4 {
     }
 
     public interface SegmentStatus extends Iterable<Segment> {
-        void add(float x, Segment segment);
+        void updateLine(float l);
+
+        void add(float l, Segment segment);
 
         void remove(Segment segment);
-
-        void swap(Segment s1, Segment s2);
 
         Segment prev(Segment segment);
 
@@ -342,11 +337,9 @@ public class Problem4 {
         }
 
         private static class Node {
-            float x;
             Segment segment;
 
-            Node(float x, Segment segment) {
-                this.x = x;
+            Node(Segment segment) {
                 this.segment = segment;
             }
         }
@@ -354,23 +347,25 @@ public class Problem4 {
         private final List<Node> list = new ArrayList<>();
 
         @Override
-        public void add(float x, Segment segment) {
-            int pos = findInsertPos(x, segment);
-            list.add(pos, new Node(x, segment));
+        public void updateLine(float l) {
+            list.sort(new Comparator<Node>() {
+                @Override
+                public int compare(Node n1, Node n2) {
+                    return ListSegmentStatus.this.compare(l, n1.segment, n2.segment);
+                }
+            });
+        }
+
+        @Override
+        public void add(float l, Segment segment) {
+            int pos = findInsertPos(l, segment);
+            list.add(pos, new Node(segment));
         }
 
         @Override
         public void remove(Segment segment) {
             int index = indexOf(segment);
             list.remove(index);
-        }
-
-        @Override
-        public void swap(Segment s1, Segment s2) {
-            int index1 = indexOf(s1);
-            int index2 = indexOf(s2);
-            list.get(index1).segment = s2;
-            list.get(index2).segment = s1;
         }
 
         @Override
@@ -389,29 +384,29 @@ public class Problem4 {
             return list.stream().map(node -> node.segment).collect(Collectors.toList());
         }
 
-        private int findInsertPos(float x, Segment segment) {
+        private int findInsertPos(float l, Segment segment) {
             int pos = 0;
-            while (pos < list.size() && (list.get(pos).x < x || Float.compare(list.get(pos).x, x) == 0 && cmp(list.get(pos).segment, segment) < 0)) {
+            while (pos < list.size() && compare(l, list.get(pos).segment, segment) < 0) {
                 pos += 1;
             }
 
             return pos;
         }
 
-        private int cmp(Segment s1, Segment s2) {
-            float k1 = slope(s1);
-            float k2 = slope(s2);
-            int cmp = Float.compare(k2, k1);
+        private int compare(float l, Segment s1, Segment s2) {
+            final float x1 = intersect(l, s1);
+            final float x2 = intersect(l, s2);
+            final int cmp = Float.compare(x1, x2);
             if (cmp != 0) {
                 return cmp;
             }
-            return Integer.compare(s2.start.y, s1.start.y);
+            return Float.compare(s2.start.x, s1.start.x);
         }
 
-        private float slope(Segment s) {
-            int dx = s.start.x - s.end.x;
-            int dy = s.start.y - s.end.y;
-            return (float) dy / (float) dx;
+        private float intersect(float l, Segment s) {
+            float k = (float) (s.start.y - s.end.y) / (float) (s.start.x - s.end.x);
+            float b = s.start.y - k * s.start.x;
+            return Math.round(100 * (l - b) / k) * 0.01f;
         }
 
         private int indexOf(Segment segment) {
@@ -434,7 +429,7 @@ public class Problem4 {
         }
 
         public Segment(Point start, Point end) {
-            if (start.y > end.y) {
+            if (start.y > end.y || start.y == end.y && start.x < end.x) {
                 this.start = start;
                 this.end = end;
             } else {

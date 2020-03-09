@@ -8,7 +8,7 @@ import static org.junit.Assert.*;
 
 public class Problem4Test {
     @Test
-    public void testStatus() {
+    public void testStatus1() {
         Problem4.SegmentStatus status = new Problem4.ListSegmentStatus();
         Problem4.Segment s1 = parseSegment(1, "-8 89 -3 18");
         Problem4.Segment s2 = parseSegment(2, "-68 75 28 -5");
@@ -28,6 +28,65 @@ public class Problem4Test {
         assertStatus(status, s2, s4, s3, s1);
     }
 
+    @Test
+    public void testStatus2() {
+        Problem4.SegmentStatus status = new Problem4.ListSegmentStatus();
+        Problem4.Segment s1 = parseSegment(1, "1 0 3 4 ");
+        Problem4.Segment s2 = parseSegment(2, "5 4 3 0");
+        Problem4.Segment s3 = parseSegment(3, "1 2 6 2");
+
+        addSegment(status, s1);
+        assertStatus(status, s1);
+
+        addSegment(status, s2);
+        assertStatus(status, s1, s2);
+
+        addSegment(status, s3);
+        assertStatus(status, s3, s1, s2);
+    }
+
+    @Test
+    public void testStatus3() {
+        Problem4.SegmentStatus status = new Problem4.ListSegmentStatus();
+        Problem4.Segment s1 = parseSegment(1, "-83 34 3 98");
+        Problem4.Segment s2 = parseSegment(2, "74 -9 -14 87");
+        Problem4.Segment s3 = parseSegment(3, "-65 9 -89 86");
+        Problem4.Segment s4 = parseSegment(4, "91 25 -98 83");
+        Problem4.Segment s5 = parseSegment(5, "-85 -57 -16 17");
+        Problem4.Segment s6 = parseSegment(6, "-7 -66 98 14");
+        Problem4.Segment s7 = parseSegment(7, "-57 -12 38 -4");
+        Problem4.Segment s8 = parseSegment(8, "93 -90 -95 -39");
+
+        addSegment(status, s1);
+        assertStatus(status, s1);
+
+        addSegment(status, s2);
+        assertStatus(status, s2, s1);
+
+        update(status, s1, s2, -13.10023f, 86.01843f);
+        assertStatus(status, s1, s2);
+
+        addSegment(status, s3);
+        assertStatus(status, s3, s1, s2);
+
+        addSegment(status, s4);
+        assertStatus(status, s4, s3, s1, s2);
+
+        update(status, s3, s4, -87.01414f, 79.62869f);
+        assertStatus(status, s3, s4, s1, s2);
+
+        float[] cord = new float[2];
+        Problem4.getIntersection(s3, s4, Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY, cord);
+        System.out.println(Arrays.toString(cord));
+    }
+
+    private void update(Problem4.SegmentStatus status, Problem4.Segment s1, Problem4.Segment s2, float x, float y) {
+        status.remove(s1);
+        status.remove(s2);
+        status.add(y, s1);
+        status.add(y, s2);
+    }
+
     private void assertStatus(Problem4.SegmentStatus status, Problem4.Segment... segments) {
         List<Problem4.Segment> actual = new ArrayList<>();
         for (Problem4.Segment s : status) {
@@ -38,7 +97,7 @@ public class Problem4Test {
     }
 
     private void addSegment(Problem4.SegmentStatus status, Problem4.Segment segment) {
-        status.add(segment.start.x, segment);
+        status.add(segment.start.y, segment);
     }
 
     @Test
@@ -81,6 +140,40 @@ public class Problem4Test {
         assertEqualsIgnoreOrder(expected, actual);
     }
 
+    @Test
+    public void test6() {
+        List<Problem4.Segment> segments = parseSegments("1 0 3 4 1 2 6 2 5 4 3 0");
+        List<Problem4.Segment> expected = parseSegments("1 2 6 2 3 4 1 0 1 2 6 2 5 4 3 0");
+        List<Problem4.Segment> actual = Problem4.solve(segments);
+        assertEqualsIgnoreOrder(expected, actual);
+    }
+
+    @Test
+    public void test7() {
+        List<Problem4.Segment> segments = parseSegments("74 -9 -14 87\n" +
+                "93 -90 -95 -39\n" +
+                "-16 17 -85 -57\n" +
+                "-57 -12 38 -4\n" +
+                "3 98 -83 34\n" +
+                "98 14 -7 -66\n" +
+                "-98 83 91 25\n" +
+                "-65 9 -89 86");
+        List<Problem4.Segment> expected = parseSegments("-14 87 74 -9 3 98 -83 34 -98 83 91 25 -89 86 -65 9 -98 83 91 25 3 98 -83 34 -98 83 91 25 -14 87 74 -9 -89 86 -65 9 3 98 -83 34 -14 87 74 -9 98 14 -7 -66 -16 17 -85 -57 38 -4 -57 -12 -95 -39 93 -90 -16 17 -85 -57 -95 -39 93 -90 98 14 -7 -66");
+        List<Problem4.Segment> actual = Problem4.solve(segments);
+        assertEqualsIgnoreOrder(expected, actual);
+    }
+
+    @Test
+    public void test8() {
+        List<Problem4.Segment> segments = parseSegments("2 0 4 4\n" +
+                "4 0 2 4\n" +
+                "4 1 2 1\n" +
+                "4 3 2 3");
+        List<Problem4.Segment> expected = parseSegments("2 3 4 3 2 4 4 0 2 3 4 3 4 4 2 0 2 4 4 0 4 4 2 0 2 1 4 1 4 4 2 0 2 1 4 1 2 4 4 0");
+        List<Problem4.Segment> actual = Problem4.solve(segments);
+        assertEqualsIgnoreOrder(expected, actual);
+    }
+
     private void assertEqualsIgnoreOrder(List<Problem4.Segment> expected, List<Problem4.Segment> actual) {
         String message = String.format("\nExpected :%s\nActual   :%s", join(expected), join(actual));
         assertEquals(message, expected.size(), actual.size());
@@ -107,7 +200,7 @@ public class Problem4Test {
     }
 
     private List<Problem4.Segment> parseSegments(String s) {
-        String[] tokens = s.split(" ");
+        String[] tokens = s.split("\\s+");
         if (tokens.length % 4 != 0) {
             throw new IllegalArgumentException("Illegal segments: " + s);
         }
