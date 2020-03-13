@@ -1,23 +1,18 @@
 import Problem2KdTree.KdTree
 import Problem2KdTree.Point
 import processing.core.PApplet
-import java.util.*
+import processing.core.PConstants
+import processing.core.PConstants.LEFT
 
-class Sketch2(points: List<Point>, width: Int = 500, height: Int = 500) : PApplet() {
-    private val points: List<Point> = points.toList();
+private class Sketch2(width: Int = 500, height: Int = 500) : PApplet() {
+    private val points = mutableListOf<Point>()
     private val scale: Float
-    private val tree = KdTree(points);
-    private var result: List<Point> = emptyList()
-    private var operations = mutableListOf<Operation>()
+    private var tree = KdTree(points);
 
     init {
         this.width = width
         this.height = height
-
-        val (min, max) = bounds(points)
-        val scaleY = (width - 100) / (max.x - min.x).toFloat();
-        val scaleX = (height - 100) / (max.y - min.y).toFloat()
-        scale = min(scaleX, scaleY)
+        scale = 1.0f
     }
 
     override fun settings() {
@@ -33,19 +28,15 @@ class Sketch2(points: List<Point>, width: Int = 500, height: Int = 500) : PApple
         translate(0.5f * width, 0.5f * height)
         drawOrigin()
         drawTree(tree)
-        drawOperations()
     }
 
-    private fun drawOperations() {
-        synchronized(operations) {
-            for (op in operations) {
-                when (op) {
-                    is Operation.Rect -> drawRect(op.x1, op.y1, op.x2, op.y2, color = op.color.toLong())
-                    is Operation.Line -> drawLine(op.x1, op.y1, op.x2, op.y2, color = op.color.toLong())
-                    is Operation.Point -> drawPoint(op.x, op.y, color = op.color.toLong())
-                }
-            }
+    override fun mouseClicked() {
+        if (mouseButton == PConstants.LEFT) {
+            points.add(Point(mouseX - width / 2, mouseY - height / 2))
+        } else {
+            points.clear()
         }
+        tree = KdTree(points)
     }
 
     private fun drawOrigin() {
@@ -134,22 +125,5 @@ private sealed class Operation {
 }
 
 fun main() {
-    val points = parsePoints("-9 6 -8 3 1 7 3 0 8 -4 -2 8 -6 -3 -1 2 2 -2 0 1 6 5 -5 4 -3 -1")
-    Sketch2(points).run()
-}
-
-private fun parsePoints(s: String): List<Point> {
-    val tokens = s.split("\\s+".toRegex()).toTypedArray()
-    require(tokens.size % 2 == 0) { "Illegal polygon: $s" }
-    val n = tokens.size / 2
-    val points: MutableList<Point> = ArrayList(n)
-    var i = 0
-    var j = 0
-    while (i < n) {
-        val x = tokens[j++].toInt()
-        val y = tokens[j++].toInt()
-        points.add(Point(x, y))
-        ++i
-    }
-    return points
+    Sketch2().run()
 }
